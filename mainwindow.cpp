@@ -63,7 +63,47 @@ void MainWindow::inFile2()
 
 void MainWindow::interpolation()
 {
+    for (float x: interSearch) //linear
+    {
+        auto m = interBase.lowerBound(x);
+        qDebug() << (m - 1).value() +  (m.value() - (m - 1).value()) / (m.key() - (m - 1).key()) * (x - (m - 1).key());
+    }
 
+    for (float x: interSearch) //kvadrat
+    {
+        auto m = interBase.lowerBound(x);
+        QMap<float, float>::iterator it[3];
+        if ((m - 1).key() == interBase.firstKey())
+        {
+            it[0] = m - 1;
+            it[1] = m;
+            it[2] = m + 1;
+        }
+        else if (m.key() == interBase.lastKey())
+        {
+            it[0] = m - 2;
+            it[1] = m - 1;
+            it[2] = m;
+        }
+        else if ((x - (m - 2).key()) <= ((m + 1).key() - x))
+        {
+            it[0] = m - 2;
+            it[1] = m - 1;
+            it[2] = m;
+        }
+        else
+        {
+            it[0] = m - 1;
+            it[1] = m;
+            it[2] = m + 1;
+        }
+        float a[3];
+        a[2] = (it[2].value() - it[0].value()) / ((it[2].key() - it[0].key()) * (it[2].key() - it[1].key())) -
+                (it[1].value() - it[0].value()) / ((it[1].key() - it[0].key()) * (it[2].key() - it[1].key()));
+        a[1] = (it[1].value() - it[0].value()) / (it[1].key() - it[0].key()) - a[2] * (it[1].key() + it[0].key());
+        a[0] = it[0].value() - a[1] * it[0].key() - a[2] * it[0].key() * it[0].key();
+        qDebug() << a[0] + a[1] * x + a[2] * x * x;
+    }
 }
 
 MainWindow::MainWindow(QWidget *parent)

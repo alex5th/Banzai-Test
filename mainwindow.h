@@ -10,6 +10,10 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QDebug>
+#include <QErrorMessage>
+#include <inter.h>
+
+
 
 class MainWindow : public QMainWindow
 {
@@ -36,7 +40,7 @@ public:
 public slots:
     void inFile1();
     void inFile2();
-    void interpolation();
+    void outFile();
 };
 
 #endif // MAINWINDOW_H

@@ -1,18 +1,23 @@
 #ifndef INTER_H
 #define INTER_H
 
-#include <QObject>
+#include <QMap>
+#include <QVector>
+#include <QString>
+#include <cmath>
 
-class Inter : public QObject
+class Inter
 {
-    Q_OBJECT
 private:
+    QMap<float, float> interBase;
+    QVector<float> interSearch;
+    QVector<float> interRes;
 public:
-    explicit Inter(QObject *parent = nullptr);
-    Inter(int );
-signals:
-
-public slots:
+    Inter();
+    Inter(QMap<float, float> iB, QVector<float> iS);
+    QVector<float> line();
+    QVector<float> square();
+    QVector<float> cube();
 };
 
 #endif // INTER_H

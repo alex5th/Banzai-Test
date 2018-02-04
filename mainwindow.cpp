@@ -11,13 +11,13 @@ bool MainWindow::checkRangeArg(QStringList temp)
 void MainWindow::inFile1()
 {
     QString fn;
-    fn = QFileDialog::getOpenFileName(0,QString("Выберите файл с интерполяцией"),"input1.txt",QString("Text file (*.txt)"));
+    fn = QFileDialog::getOpenFileName(0,QString("Выберите файл с интерполяцией"),"",QString("Text file (*.txt)"));
     file->setFileName(fn);
     file->open(QIODevice::ReadOnly);
     QStringList temp = QString(file->readAll()).split(QRegExp("[\\s]"),QString::SkipEmptyParts);
     file->close();
     if (fn!="")
-        if (temp.size() != temp[0].toInt() * 2 + 1)
+        if ((temp.size() != temp[0].toInt() * 2 + 1) || (temp[0].toInt() < 2))
         {
             bInFile2->setDisabled(true);
             bOutFile->setDisabled(true);
@@ -38,7 +38,7 @@ void MainWindow::inFile1()
 void MainWindow::inFile2()
 {
     QString fn;
-    fn = QFileDialog::getOpenFileName(0,QString("Выберите файл с аргументами"),"input2.txt",QString("Text file (*.txt)"));
+    fn = QFileDialog::getOpenFileName(0,QString("Выберите файл с аргументами"),"",QString("Text file (*.txt)"));
     file->setFileName(fn);
     file->open(QIODevice::ReadOnly);
     QStringList temp = QString(file->readAll()).split(QRegExp("[\\s]"),QString::SkipEmptyParts);
@@ -61,49 +61,53 @@ void MainWindow::inFile2()
     file->close();
 }
 
-void MainWindow::interpolation()
+void MainWindow::outFile()
 {
-    for (float x: interSearch) //linear
-    {
-        auto m = interBase.lowerBound(x);
-        qDebug() << (m - 1).value() +  (m.value() - (m - 1).value()) / (m.key() - (m - 1).key()) * (x - (m - 1).key());
+    Inter inter1(interBase, interSearch);
+    QVector<float> outData;
+
+    switch (cb->currentIndex()) {
+    case 0:
+        outData = inter1.line();
+        break;
+    case 1:
+        outData = inter1.square();
+        break;
+    case 2:
+        outData = inter1.cube();
+        break;
+    default:
+        break;
     }
 
-    for (float x: interSearch) //kvadrat
+    if (outData.isEmpty())
     {
-        auto m = interBase.lowerBound(x);
-        QMap<float, float>::iterator it[3];
-        if ((m - 1).key() == interBase.firstKey())
-        {
-            it[0] = m - 1;
-            it[1] = m;
-            it[2] = m + 1;
-        }
-        else if (m.key() == interBase.lastKey())
-        {
-            it[0] = m - 2;
-            it[1] = m - 1;
-            it[2] = m;
-        }
-        else if ((x - (m - 2).key()) <= ((m + 1).key() - x))
-        {
-            it[0] = m - 2;
-            it[1] = m - 1;
-            it[2] = m;
-        }
-        else
-        {
-            it[0] = m - 1;
-            it[1] = m;
-            it[2] = m + 1;
-        }
-        float a[3];
-        a[2] = (it[2].value() - it[0].value()) / ((it[2].key() - it[0].key()) * (it[2].key() - it[1].key())) -
-                (it[1].value() - it[0].value()) / ((it[1].key() - it[0].key()) * (it[2].key() - it[1].key()));
-        a[1] = (it[1].value() - it[0].value()) / (it[1].key() - it[0].key()) - a[2] * (it[1].key() + it[0].key());
-        a[0] = it[0].value() - a[1] * it[0].key() - a[2] * it[0].key() * it[0].key();
-        qDebug() << a[0] + a[1] * x + a[2] * x * x;
+        QErrorMessage errorMessage;
+        errorMessage.showMessage("Нет возможности посчитать!");
+        errorMessage.exec();
+        return;
     }
+
+    int fileNumber = 0;
+    do
+    {
+        file->setFileName("output" + QString::number(fileNumber) + ".txt");
+        ++fileNumber;
+    }
+    while (file->exists());
+
+
+    if(file->open(QIODevice::WriteOnly))
+    {
+        QTextStream out(file);
+        out << outData.size() << endl;
+        for (int i = 0; i < outData.size(); ++i)
+        {
+            out << interSearch[i] << "  " <<outData[i] << endl;
+        }
+    }
+    file->close();
+    qDebug() << outData;
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -116,7 +120,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     this->setCentralWidget(w);
-    this->setWindowTitle("Толчинский, интерполяция");
+    this->setWindowTitle("Интерполяция");
     w->setLayout(mLayout);
     mLayout->addWidget(bInFile1);
     mLayout->addWidget(bInFile2);
@@ -129,8 +133,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(bInFile1, &QPushButton::clicked, this, &MainWindow::inFile1);
     QObject::connect(bInFile2, &QPushButton::clicked, this, &MainWindow::inFile2);
-    QObject::connect(bOutFile, &QPushButton::clicked, this, &MainWindow::interpolation);
+    QObject::connect(bOutFile, &QPushButton::clicked, this, &MainWindow::outFile);
 }
+
 
 MainWindow::~MainWindow()
 {
